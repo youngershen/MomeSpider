@@ -25,6 +25,7 @@ class Worker(Thread):
             try:
                 callback,*args,**kwds = self.work_queue.get(self.timeout)
                 result = callback(*args,**kwds)
+                self.result_queue = result
                 print "work[%2d] : %s" % (self.id,result)
             except Queue.empty:
                 break
@@ -53,3 +54,15 @@ class WorkManager():
     def start(self):
         for work in works:
             work.start()
+
+    def get_result(self):
+        return self.result_queue
+    def wait_for_complete(self):
+        while len(self.works):
+            w = self.workers.pop()
+            w.join()
+            if w.isAlive() and not self.work_queue.empty():
+                self.works.append(w)
+
+        print 'all done'
+        
